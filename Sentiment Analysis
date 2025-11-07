@@ -1,0 +1,29 @@
+from textblob import TextBlob
+
+def analyze_sentiment(text):
+    blob = TextBlob(text)
+    sentiment = blob.sentiment
+
+    # Sentiment includes polarity and subjectivity:
+    # Polarity: -1 (negative) to +1 (positive)
+    # Subjectivity: 0 (objective) to 1 (subjective)
+    print(f"\n📝 Text: {text}")
+    print(f"🔍 Sentiment Polarity: {sentiment.polarity}")
+    print(f"🧠 Subjectivity: {sentiment.subjectivity}")
+
+    if sentiment.polarity > 0:
+        print("😊 Sentiment: Positive")
+    elif sentiment.polarity < 0:
+        print("😠 Sentiment: Negative")
+    else:
+        print("😐 Sentiment: Neutral")
+
+# Main program loop
+print("📊 Sentiment Analysis Tool (Type 'exit' to quit)")
+
+while True:
+    user_input = input("\nEnter a text to analyze: ")
+    if user_input.lower() == "exit":
+        print("Goodbye! 👋")
+        break
+    analyze_sentiment(user_input)
