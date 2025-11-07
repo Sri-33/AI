@@ -1,0 +1,26 @@
+# Simple First-Order Logic Knowledge Base
+
+# Facts (predicate → list of tuples)
+facts = {
+    "Human": [("Socrates",), ("Plato",)],
+    "Mortal": []    # initially empty
+}
+
+# Rules (simple implication: if Human(x) then Mortal(x))
+def infer_mortal():
+    for (x,) in facts["Human"]:
+        if (x,) not in facts["Mortal"]:
+            facts["Mortal"].append((x,))
+
+# Query function
+def query(predicate, *args):
+    return (args,) in facts.get(predicate, [])
+
+# Run simple inference
+infer_mortal()
+
+# Queries
+print(query("Human", "Socrates"))  # True
+print(query("Mortal", "Socrates")) # True (inferred)
+print(query("Mortal", "Plato"))    # True (inferred)
+print(query("Mortal", "Aristotle"))# False
