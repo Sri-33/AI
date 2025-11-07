@@ -1,0 +1,21 @@
+# A tiny Knowledge Base (KB) with facts and rules
+
+# Facts (stored as a dictionary of key → value)
+knowledge_base = {
+    "sky": "blue",
+    "grass": "green",
+    "rose": "red"
+}
+
+# Rules (stored as functions)
+def is_color_of(thing, color):
+    return knowledge_base.get(thing) == color
+
+def what_color_is(thing):
+    return knowledge_base.get(thing, "I don't know")
+
+# Query the KB
+print(is_color_of("sky", "blue"))   # True
+print(is_color_of("grass", "red"))  # False
+print(what_color_is("rose"))        # red
+print(what_color_is("sun"))         # I don't know
