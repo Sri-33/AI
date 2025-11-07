@@ -1,0 +1,26 @@
+import speech_recognition as sr
+import pyttsx3
+
+r = sr.Recognizer()
+engine = pyttsx3.init()
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+with sr.Microphone() as source:
+    print("🎤 Say something...")
+    audio = r.listen(source)
+
+try:
+    text = r.recognize_google(audio).lower()
+    print("You said:", text)
+
+    if "hello" in text:
+        speak("Hello! How can I help you?")
+    elif "time" in text:
+        speak("Sorry, I can't tell time yet!")
+    else:
+        speak("Sorry, I didn't understand that.")
+except:
+    speak("Sorry, I couldn't hear you.")
