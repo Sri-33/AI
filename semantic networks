@@ -1,0 +1,29 @@
+# Semantic Network Representation
+
+semantic_network = {
+    "Car": {
+        "is_a": ["Vehicle"],
+        "has_part": ["Engine", "Wheel"],
+        "can_do": ["Move"]
+    },
+    "Bicycle": {
+        "is_a": ["Vehicle"],
+        "has_part": ["Wheel", "Pedal"],
+        "can_do": ["Move"]
+    },
+    "Vehicle": {
+        "can_do": ["Transport"]
+    },
+    "Engine": {},
+    "Wheel": {},
+    "Pedal": {}
+}
+
+# Function to query relationships
+def query(obj, relationship):
+    return semantic_network.get(obj, {}).get(relationship, "No such relationship found")
+
+# Testing the semantic network
+print(query("Car", "is_a"))        # ['Vehicle']
+print(query("Bicycle", "has_part")) # ['Wheel', 'Pedal']
+print(query("Vehicle", "can_do"))   # ['Transport']
