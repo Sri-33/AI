@@ -1,0 +1,21 @@
+# Tiny medical expert system (forward chaining)
+
+rules = {
+    ("fever", "cough"): "flu",
+    ("fever", "dry_cough", "fatigue"): "covid",
+    ("runny_nose", "sneezing"): "allergy"
+}
+
+# Ask for symptoms
+facts = set()
+for s in {"fever", "cough", "dry_cough", "fatigue", "runny_nose", "sneezing"}:
+    if input(f"Do you have {s.replace('_', ' ')}? (y/n): ") == "y":
+        facts.add(s)
+
+# Forward chaining
+diag = set()
+for cond, disease in rules.items():
+    if set(cond).issubset(facts):
+        diag.add(disease)
+
+print("\nPossible diagnosis:", ", ".join(diag) if diag else "No match")
