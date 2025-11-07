@@ -1,0 +1,110 @@
+# propositional_logic.py
+# Operators: ~ (not), & (and), | (or), -> (implies), <-> (iff), parentheses
+
+import re
+from itertools import product
+
+# ---------- Lexer ----------
+TOKENS = [
+    (r"\s+", None),
+    (r"<->", "IFF"), (r"->", "IMP"),
+    (r"~", "NOT"), (r"\&", "AND"), (r"\|", "OR"),
+    (r"\(", "LP"), (r"\)", "RP"),
+    (r"[A-Za-z_][A-Za-z0-9_]*", "SYM"),
+]
+def lex(s):
+    i, out = 0, []
+    while i < len(s):
+        for pat, typ in TOKENS:
+            m = re.match(pat, s[i:])
+            if m:
+                if typ: out.append((typ, m.group(0)))
+                i += len(m.group(0)); break
+        else:
+            raise SyntaxError(f"Bad token near: {s[i:i+12]}")
+    out.append(("EOF","")); return out
+
+# ---------- Parser (recursive descent) ----------
+# Precedence: NOT > AND > OR > IMP > IFF
+class Parser:
+    def __init__(self, toks): self.toks=toks; self.i=0
+    def peek(self): return self.toks[self.i][0]
+    def eat(self, t=None):
+        tok = self.toks[self.i]; 
+        if t and tok[0]!=t: raise SyntaxError(f"Expected {t}, got {tok}")
+        self.i+=1; return tok
+    def parse(self): 
+        node = self.parse_iff()
+        if self.peek()!="EOF": raise SyntaxError("Junk after formula")
+        return node
+    def parse_iff(self):
+        node = self.parse_imp()
+        while self.peek()=="IFF":
+            self.eat("IFF"); node=("iff", node, self.parse_imp())
+        return node
+    def parse_imp(self):
+        node = self.parse_or()
+        while self.peek()=="IMP":
+            self.eat("IMP"); node=("imp", node, self.parse_or())
+        return node
+    def parse_or(self):
+        node = self.parse_and()
+        while self.peek()=="OR":
+            self.eat("OR"); node=("or", node, self.parse_and())
+        return node
+    def parse_and(self):
+        node = self.parse_not()
+        while self.peek()=="AND":
+            self.eat("AND"); node=("and", node, self.parse_not())
+        return node
+    def parse_not(self):
+        if self.peek()=="NOT": self.eat("NOT"); return ("not", self.parse_not())
+        return self.parse_atom()
+    def parse_atom(self):
+        if self.peek()=="LP":
+            self.eat("LP"); node = self.parse_iff(); self.eat("RP"); return node
+        typ,val = self.eat("SYM"); return ("sym", val)
+
+def parse_formula(s): return Parser(lex(s)).parse()
+
+# ---------- Evaluation ----------
+def eval_ast(ast, model):
+    op = ast[0]
+    if op=="sym": return bool(model[ast[1]])
+    if op=="not": return not eval_ast(ast[1], model)
+    if op=="and": return eval_ast(ast[1], model) and eval_ast(ast[2], model)
+    if op=="or":  return eval_ast(ast[1], model) or  eval_ast(ast[2], model)
+    if op=="imp": return (not eval_ast(ast[1], model)) or eval_ast(ast[2], model)
+    if op=="iff": return eval_ast(ast[1], model) == eval_ast(ast[2], model)
+    raise ValueError("Unknown node: "+op)
+
+def symbols(ast):
+    op = ast[0]
+    if op=="sym": return {ast[1]}
+    if op=="not": return symbols(ast[1])
+    if op in {"and","or","imp","iff"}: return symbols(ast[1]) | symbols(ast[2])
+    return set()
+
+# ---------- Truth-table entailment ----------
+def entails(kb_formulas, query_formula, show_counterexample=True):
+    kb = [parse_formula(f) for f in kb_formulas]
+    q = parse_formula(query_formula)
+    syms = set().union(*map(symbols, kb+[q]))
+    names = sorted(syms)
+    for vals in product([False, True], repeat=len(names)):
+        model = dict(zip(names, vals))
+        if all(eval_ast(f, model) for f in kb):
+            if not eval_ast(q, model):
+                if show_counterexample:
+                    print("Counterexample model where KB true but query false:")
+                    print({k:v for k,v in model.items()})
+                return False
+    return True
+
+# ---------- Demo ----------
+if __name__ == "__main__":
+    KB = ["(P -> Q)", "P"]  # Modus Ponens
+    Q  = "Q"
+    print("KB ⊨ Q ?", entails(KB, Q))          # True
+    print("KB ⊨ P & Q ?", entails(KB, "P & Q")) # True
+    print("KB ⊨ R ?", entails(KB, "R"))         # False + counterexample
