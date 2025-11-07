@@ -1,0 +1,42 @@
+# backward_chaining_med_expert.py
+# Run: python backward_chaining_med_expert.py
+
+RULES = {
+    "flu":         [["fever", "cough", "body_ache"]],
+    "common_cold": [["runny_nose", "sneeze"]],
+    "strep":       [["fever", "sore_throat", "swollen_glands"]],
+    "covid":       [["fever", "dry_cough", "loss_smell"]],
+}
+
+QUEST = {
+    "fever": "Do you have fever?",
+    "cough": "Do you have cough?",
+    "dry_cough": "Is it a dry cough?",
+    "body_ache": "Any body ache?",
+    "runny_nose": "Runny nose?",
+    "sneeze": "Frequent sneezing?",
+    "sore_throat": "Sore throat?",
+    "swollen_glands": "Swollen neck glands?",
+    "loss_smell": "Loss of smell?",
+}
+
+facts = {}  # memo of asked symptoms: {symptom: True/False}
+
+def ask(sym):
+    if sym in facts: return facts[sym]
+    ans = input(f"{QUEST.get(sym, 'Do you have ' + sym + '?')} (y/n): ").strip().lower()
+    facts[sym] = ans.startswith('y')
+    return facts[sym]
+
+def prove(goal):
+    if goal in QUEST:           # goal is a symptom -> ask user
+        return ask(goal)
+    for ants in RULES.get(goal, []):           # try rules that conclude goal
+        if all(prove(a) for a in ants):        # backward-chain over antecedents
+            return True
+    return False
+
+if _name_ == "_main_":
+    diseases = ["covid", "strep", "flu", "common_cold"]  # order = priority
+    found = [d for d in diseases if prove(d)]
+    print("\nDiagnosis:", (", ".join(found) if found else "Inconclusive"))
