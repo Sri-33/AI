@@ -1,0 +1,135 @@
+import random
+import sys
+
+MIN_N, MAX_N = 1, 100
+
+def temperature(distance):
+    if distance == 0:
+        return "🎯 Exact!"
+    if distance <= 2:
+        return "🔥 Scorching (±2)"
+    if distance <= 5:
+        return "🔥 Hot (±5)"
+    if distance <= 10:
+        return "♨️ Warm (±10)"
+    if distance <= 20:
+        return "🧊 Cool (±20)"
+    return "🥶 Cold (far away)"
+
+def recommend_next(lo, hi, last_guess=None, last_dir=None):
+    """Binary-search style coach: guess the midpoint of the remaining range.
+    If last_dir is known, nudge slightly to avoid repeating the same midpoint."""
+    if lo > hi:
+        return None
+    mid = (lo + hi) // 2
+    if last_guess is not None and mid == last_guess:
+        if last_dir == "low":
+            mid = min(hi, mid + 1)
+        elif last_dir == "high":
+            mid = max(lo, mid - 1)
+    return mid
+
+def selective_parity_hint(secret, attempts):
+    # Reveal parity after a few attempts for a helpful boost
+    return attempts >= 3
+
+def selective_div_hint(secret, attempts):
+    # Reveal small-prime divisibility a bit later
+    return attempts >= 5
+
+def divisibility_facts(n):
+    facts = []
+    for p, label in [(2, "2"), (3, "3"), (5, "5"), (7, "7")]:
+        if n % p == 0:
+            facts.append(label)
+    return facts
+
+def read_int(prompt):
+    while True:
+        raw = input(prompt).strip().lower()
+        if raw in {"q", "quit", "exit"}:
+            print("👋 Exiting. See you next time!")
+            sys.exit(0)
+        if raw == "help":
+            print(f"💡 Guess a number between {MIN_N} and {MAX_N}. Type 'quit' to exit.")
+            continue
+        try:
+            val = int(raw)
+            return val
+        except ValueError:
+            print("⚠️ Please enter a valid integer (or type 'quit').")
+
+def play():
+    print("🤖 Number Guessing with AI Feedback")
+    print(f"   I'm thinking of a number between {MIN_N} and {MAX_N}.")
+    print("   Type 'help' for tips or 'quit' to exit.\n")
+
+    secret = random.randint(MIN_N, MAX_N)
+    attempts = 0
+    lo, hi = MIN_N, MAX_N
+    last_dir = None  # "low" if your guess was too low; "high" if too high
+    last_guess = None
+
+    while True:
+        guess = read_int(f"🔢 Your guess ({lo}–{hi}): ")
+        if guess < lo or guess > hi:
+            print(f"⚠️ That’s outside the current possible range ({lo}–{hi}). Try inside it.")
+            continue
+
+        attempts += 1
+        last_guess = guess
+
+        diff = abs(guess - secret)
+        temp = temperature(diff)
+
+        if guess == secret:
+            print(f"\n{temp} You got it in {attempts} attempt(s)! 🎉")
+            # A tiny qualitative grade
+            if attempts <= 7:
+                print("🏅 Pro level searching!")
+            elif attempts <= 10:
+                print("✅ Solid deduction.")
+            else:
+                print("🧭 Consider using the coach’s recommended guess sooner next time.")
+            break
+
+        direction = "higher" if guess < secret else "lower"
+        last_dir = "low" if guess < secret else "high"
+
+        # Narrow the feasible range
+        if guess < secret:
+            lo = max(lo, guess + 1)
+        else:
+            hi = min(hi, guess - 1)
+
+        # Build AI feedback pack
+        print(f"{temp} → Try {direction}.")
+
+        # Optional parity hint
+        if selective_parity_hint(secret, attempts):
+            parity = "even" if secret % 2 == 0 else "odd"
+            print(f"🧠 Hint: The number is **{parity}**.")
+
+        # Optional divisibility hints
+        if selective_div_hint(secret, attempts):
+            facts = divisibility_facts(secret)
+            if facts:
+                pretty = ", ".join(facts)
+                print(f"🧮 Extra clue: divisible by {pretty}.")
+            else:
+                print("🧮 Extra clue: not divisible by 2, 3, 5, or 7.")
+
+        # Coach recommendation
+        rec = recommend_next(lo, hi, last_guess=guess, last_dir=last_dir)
+        if rec is not None:
+            print(f"🎓 Coach says: Next smart guess ≈ **{rec}** (midpoint of {lo}–{hi}).")
+
+        # Progress encouragement
+        remaining = hi - lo + 1
+        print(f"📉 Search space shrank to {remaining} numbers.\n")
+
+if __name__ == "__main__":
+    try:
+        play()
+    except KeyboardInterrupt:
+        print("\n👋 Bye!")
